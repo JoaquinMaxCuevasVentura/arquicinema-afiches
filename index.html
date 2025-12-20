@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARQUICINEMA | Colección de Afiches</title>
+    <title>ARQUICINEMA | Colección de afiches</title>
 
     <!-- 1. FUENTES -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -50,7 +50,7 @@
         /* --- CONTADOR DE PAGINAS --- */
         #page-counter {
             position: fixed;
-            bottom: 85px; 
+            bottom: 80px; 
             left: 50%;
             transform: translateX(-50%);
             color: #666;
@@ -61,10 +61,10 @@
             pointer-events: none;
         }
 
-        /* Título del Afiche actual (Opcional, discreto arriba del contador) */
+        /* Título del Afiche actual */
         #poster-title {
             position: fixed;
-            bottom: 105px;
+            bottom: 100px;
             left: 50%;
             transform: translateX(-50%);
             color: var(--text-main);
@@ -79,7 +79,7 @@
             width: 90%;
         }
 
-        /* --- BARRA DE HERRAMIENTAS --- */
+        /* --- BARRA DE HERRAMIENTAS (INVISIBLE) --- */
         #custom-toolbar {
             position: fixed;
             bottom: 30px;
@@ -89,12 +89,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(5, 5, 5, 0.5); /* Fondo sutil para contraste */
-            backdrop-filter: blur(5px);
-            border-radius: 30px;
-            padding: 10px 25px;
-            gap: 25px; 
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            
+            /* Eliminamos todo el estilo de contenedor */
+            background: transparent !important;
+            box-shadow: none !important;
+            border: none !important;
+            backdrop-filter: none !important;
+            
+            padding: 0;
+            gap: 25px; /* Espacio entre iconos */
         }
 
         .custom-btn {
@@ -124,14 +127,6 @@
             color: #333;
             pointer-events: none;
             cursor: default;
-        }
-
-        /* Separador vertical */
-        .toolbar-separator {
-            width: 1px;
-            height: 20px;
-            background-color: #333;
-            margin: 0 5px;
         }
 
         /* --- MODAL INFO --- */
@@ -170,7 +165,7 @@
     <!-- FONDO DE RUIDO -->
     <div id="grained-container"></div>
 
-    <!-- MODAL DE INFORMACIÓN (Texto Actualizado) -->
+    <!-- MODAL DE INFORMACIÓN -->
     <div id="infoModal" class="modal-overlay">
         <div class="modal-content">
             <span class="close-modal" onclick="toggleInfo()">✕</span>
@@ -189,7 +184,7 @@
                 <p style="font-size: 12px; margin-top: 5px; color: #888;">2018 - 2021</p>
 
                 <div class="modal-note">
-                    Nota: Este fue un proyecto para el club de cine ARQUICINEMA (FAADU - UMSA), para cada proyección y ciclos, libre de cualquier propósito comercial o de lucro.
+                    Nota: Serie desarrollada en mi rol como diseñador y coordinador de ARQUICINEMA, el club de cine de la FAADU - UMSA. Cada afiche fue creado para promover las proyecciones y ciclos del colectivo, como proyecto cultural sin fines de lucro.
                 </div>
             </div>
         </div>
@@ -199,25 +194,19 @@
     <div id="poster-title">Cargando...</div>
     <div id="page-counter">00 / 00</div>
 
-    <!-- BARRA DE HERRAMIENTAS -->
+    <!-- BARRA DE HERRAMIENTAS (Iconos flotantes limpios) -->
     <div id="custom-toolbar">
         <!-- Navegación -->
         <button class="custom-btn" id="btn-prev" title="Anterior"><i class="ti-arrow-left"></i></button>
         
-        <div class="toolbar-separator"></div>
-
         <!-- Zoom Deep -->
         <button class="custom-btn" id="btn-zoom-in" title="Acercar"><i class="ti-zoom-in"></i></button>
         <button class="custom-btn" id="btn-zoom-out" title="Alejar"><i class="ti-zoom-out"></i></button>
         
-        <div class="toolbar-separator"></div>
-
         <!-- Utilidades -->
         <button class="custom-btn" id="btn-full" title="Pantalla Completa"><i class="ti-fullscreen"></i></button>
         <button class="custom-btn" id="btn-info" title="Información"><i class="ti-info-alt"></i></button>
         
-        <div class="toolbar-separator"></div>
-
         <!-- Navegación -->
         <button class="custom-btn" id="btn-next" title="Siguiente"><i class="ti-arrow-right"></i></button>
     </div>
@@ -268,12 +257,12 @@
         function initViewer() {
             viewer = OpenSeadragon({
                 id: "openseadragon-viewer",
-                prefixUrl: "", // No necesitamos iconos internos
-                showNavigationControl: false, // Usaremos nuestra toolbar
+                prefixUrl: "", 
+                showNavigationControl: false, 
                 wrapHorizontal: false,
                 visibilityRatio: 1.0, 
                 minZoomImageRatio: 0.8,
-                maxZoomPixelRatio: 5, // Deep Zoom fuerte
+                maxZoomPixelRatio: 5, 
                 animationTime: 0.5,
                 tileSources: {
                     type: 'image',
@@ -288,12 +277,10 @@
 
         // --- 4. FUNCIONES DE NAVEGACIÓN ---
         function loadPoster(index) {
-            // Validar límites
             if (index < 0 || index >= posters.length) return;
 
             currentIndex = index;
             
-            // Cargar nueva imagen en el visor existente
             viewer.open({
                 type: 'image',
                 url: posters[currentIndex].file
@@ -316,12 +303,10 @@
 
         // --- 5. EVENT LISTENERS ---
         
-        // Iniciar
         document.addEventListener("DOMContentLoaded", function() {
             initViewer();
         });
 
-        // Navegación (Siguiente / Anterior)
         document.getElementById('btn-next').addEventListener('click', function() {
             loadPoster(currentIndex + 1);
         });
@@ -329,9 +314,7 @@
             loadPoster(currentIndex - 1);
         });
 
-        // Zoom (Deep Zoom)
         document.getElementById('btn-zoom-in').addEventListener('click', function() {
-            // Zoom al centro
             var currentZoom = viewer.viewport.getZoom();
             viewer.viewport.zoomTo(currentZoom * 1.5); 
         });
@@ -340,12 +323,10 @@
             viewer.viewport.zoomTo(currentZoom / 1.5);
         });
 
-        // Pantalla Completa
         document.getElementById('btn-full').addEventListener('click', function() {
             viewer.setFullScreen(!viewer.isFullScreen());
         });
 
-        // Teclado
         document.addEventListener('keydown', function(e) {
             if (e.key === "ArrowRight") loadPoster(currentIndex + 1);
             if (e.key === "ArrowLeft") loadPoster(currentIndex - 1);
