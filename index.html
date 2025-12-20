@@ -26,7 +26,10 @@
             background-color: var(--bg-color);
             font-family: 'Archivo', sans-serif !important;
             overflow: hidden;
-            user-select: none;
+            
+            /* Bloqueamos selección global para proteger la UI */
+            user-select: none; 
+            -webkit-user-select: none;
         }
 
         /* --- FONDO DE RUIDO --- */
@@ -43,7 +46,7 @@
             position: absolute;
             top: 0; left: 0;
             z-index: 10;
-            opacity: 0; /* Inicio oculto para fade-in */
+            opacity: 0; 
             transition: opacity 0.5s ease;
         }
 
@@ -90,14 +93,13 @@
             align-items: center;
             justify-content: center;
             
-            /* Eliminamos todo el estilo de contenedor */
             background: transparent !important;
             box-shadow: none !important;
             border: none !important;
             backdrop-filter: none !important;
             
             padding: 0;
-            gap: 25px; /* Espacio entre iconos */
+            gap: 25px; 
         }
 
         .custom-btn {
@@ -113,7 +115,6 @@
 
         .custom-btn i { font-size: 20px; line-height: 1; display: block; font-weight: normal; }
         
-        /* Ajuste óptico icono Info */
         #btn-info i { font-size: 17px; position: relative; top: -1px; }
 
         .custom-btn:hover, .custom-btn.active {
@@ -122,7 +123,6 @@
             text-shadow: 0 0 15px rgba(220, 107, 47, 0.6);
         }
 
-        /* Botones deshabilitados (inicio/fin) */
         .custom-btn.disabled {
             color: #333;
             pointer-events: none;
@@ -143,7 +143,13 @@
         .modal-content {
             color: #fff; max-width: 500px; width: 80%;
             text-align: center; position: relative;
+            
+            /* CORRECCIÓN: PERMITIR SELECCIÓN DE TEXTO AQUÍ */
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            cursor: auto;
         }
+        
         .modal-line { width: 40px; height: 2px; background-color: var(--accent-color); margin: 20px auto; }
         .modal-title { font-size: 24px; font-weight: 800; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 3px; }
         .modal-subtitle { font-size: 11px; color: var(--accent-color); margin-bottom: 30px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
@@ -155,6 +161,9 @@
             position: absolute; top: -50px; right: 0; 
             color: #666; font-size: 30px; cursor: pointer; 
             transition: 0.2s; font-weight: 100;
+            
+            /* El botón de cerrar no debería ser seleccionable como texto */
+            user-select: none !important; 
         }
         .close-modal:hover { color: var(--accent-color); }
 
@@ -194,24 +203,17 @@
     <div id="poster-title">Cargando...</div>
     <div id="page-counter">00 / 00</div>
 
-    <!-- BARRA DE HERRAMIENTAS (Iconos flotantes limpios) -->
+    <!-- BARRA DE HERRAMIENTAS -->
     <div id="custom-toolbar">
-        <!-- Navegación -->
         <button class="custom-btn" id="btn-prev" title="Anterior"><i class="ti-arrow-left"></i></button>
-        
-        <!-- Zoom Deep -->
         <button class="custom-btn" id="btn-zoom-in" title="Acercar"><i class="ti-zoom-in"></i></button>
         <button class="custom-btn" id="btn-zoom-out" title="Alejar"><i class="ti-zoom-out"></i></button>
-        
-        <!-- Utilidades -->
         <button class="custom-btn" id="btn-full" title="Pantalla Completa"><i class="ti-fullscreen"></i></button>
         <button class="custom-btn" id="btn-info" title="Información"><i class="ti-info-alt"></i></button>
-        
-        <!-- Navegación -->
         <button class="custom-btn" id="btn-next" title="Siguiente"><i class="ti-arrow-right"></i></button>
     </div>
 
-    <!-- VISOR (Deep Zoom) -->
+    <!-- VISOR -->
     <div id="openseadragon-viewer"></div>
 
     <!-- SCRIPTS -->
@@ -220,7 +222,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.0/openseadragon.min.js"></script>
 
     <script>
-        // --- 1. DATOS DE LOS AFICHES ---
         var posters = [
             { file: "aeon_flux.jpg", title: "Aeon Flux" },
             { file: "ciclo_celuloides.jpg", title: "Ciclo: Celuloides" },
@@ -245,7 +246,6 @@
         var currentIndex = 0;
         var viewer;
 
-        // --- 2. CONFIGURACIÓN VISUAL (Grano) ---
         try {
             grained('#grained-container', {
                 "animate": true, "patternWidth": 100, "patternHeight": 100,
@@ -253,7 +253,6 @@
             });
         } catch(e) { console.log("Error grano"); }
 
-        // --- 3. INICIALIZAR OPENSEADRAGON ---
         function initViewer() {
             viewer = OpenSeadragon({
                 id: "openseadragon-viewer",
@@ -269,63 +268,32 @@
                     url: posters[currentIndex].file
                 }
             });
-
-            // Fade in inicial
             document.getElementById('openseadragon-viewer').style.opacity = '1';
             updateUI();
         }
 
-        // --- 4. FUNCIONES DE NAVEGACIÓN ---
         function loadPoster(index) {
             if (index < 0 || index >= posters.length) return;
-
             currentIndex = index;
-            
-            viewer.open({
-                type: 'image',
-                url: posters[currentIndex].file
-            });
-
+            viewer.open({ type: 'image', url: posters[currentIndex].file });
             updateUI();
         }
 
         function updateUI() {
-            // Texto y Contador
             var currentNum = (currentIndex + 1).toString().padStart(2, '0');
             var totalNum = posters.length.toString().padStart(2, '0');
             document.getElementById('page-counter').innerText = currentNum + " / " + totalNum;
             document.getElementById('poster-title').innerText = posters[currentIndex].title;
-
-            // Estado Botones
             document.getElementById('btn-prev').classList.toggle('disabled', currentIndex === 0);
             document.getElementById('btn-next').classList.toggle('disabled', currentIndex === posters.length - 1);
         }
 
-        // --- 5. EVENT LISTENERS ---
-        
-        document.addEventListener("DOMContentLoaded", function() {
-            initViewer();
-        });
-
-        document.getElementById('btn-next').addEventListener('click', function() {
-            loadPoster(currentIndex + 1);
-        });
-        document.getElementById('btn-prev').addEventListener('click', function() {
-            loadPoster(currentIndex - 1);
-        });
-
-        document.getElementById('btn-zoom-in').addEventListener('click', function() {
-            var currentZoom = viewer.viewport.getZoom();
-            viewer.viewport.zoomTo(currentZoom * 1.5); 
-        });
-        document.getElementById('btn-zoom-out').addEventListener('click', function() {
-            var currentZoom = viewer.viewport.getZoom();
-            viewer.viewport.zoomTo(currentZoom / 1.5);
-        });
-
-        document.getElementById('btn-full').addEventListener('click', function() {
-            viewer.setFullScreen(!viewer.isFullScreen());
-        });
+        document.addEventListener("DOMContentLoaded", function() { initViewer(); });
+        document.getElementById('btn-next').addEventListener('click', function() { loadPoster(currentIndex + 1); });
+        document.getElementById('btn-prev').addEventListener('click', function() { loadPoster(currentIndex - 1); });
+        document.getElementById('btn-zoom-in').addEventListener('click', function() { viewer.viewport.zoomTo(viewer.viewport.getZoom() * 1.5); });
+        document.getElementById('btn-zoom-out').addEventListener('click', function() { viewer.viewport.zoomTo(viewer.viewport.getZoom() / 1.5); });
+        document.getElementById('btn-full').addEventListener('click', function() { viewer.setFullScreen(!viewer.isFullScreen()); });
 
         document.addEventListener('keydown', function(e) {
             if (e.key === "ArrowRight") loadPoster(currentIndex + 1);
@@ -335,11 +303,9 @@
             if (e.key === "Escape") toggleInfo();
         });
 
-        // --- 6. MODAL INFO ---
         function toggleInfo() {
             var modal = document.getElementById('infoModal');
             var btn = document.getElementById('btn-info');
-            
             if (modal.classList.contains('show')) {
                 modal.classList.remove('show');
                 setTimeout(function() { modal.style.display = 'none'; }, 300); 
@@ -351,10 +317,7 @@
             }
         }
         document.getElementById('btn-info').onclick = toggleInfo;
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('infoModal')) toggleInfo();
-        }
-
+        window.onclick = function(event) { if (event.target == document.getElementById('infoModal')) toggleInfo(); }
     </script>
 </body>
 </html>
