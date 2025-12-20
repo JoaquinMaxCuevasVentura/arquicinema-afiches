@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARQUICINEMA | Colección de afiches</title>
+    <title>ARQUICINEMA | Colección de Afiches</title>
 
     <!-- 1. FUENTES -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,7 +27,7 @@
             font-family: 'Archivo', sans-serif !important;
             overflow: hidden;
             
-            /* Bloqueamos selección global para proteger la UI */
+            /* Bloqueamos selección global en la interfaz */
             user-select: none; 
             -webkit-user-select: none;
         }
@@ -46,7 +46,7 @@
             position: absolute;
             top: 0; left: 0;
             z-index: 10;
-            opacity: 0; 
+            opacity: 0; /* Fade in controlado */
             transition: opacity 0.5s ease;
         }
 
@@ -144,7 +144,7 @@
             color: #fff; max-width: 500px; width: 80%;
             text-align: center; position: relative;
             
-            /* CORRECCIÓN: PERMITIR SELECCIÓN DE TEXTO AQUÍ */
+            /* PERMITIR SELECCIÓN DE TEXTO */
             user-select: text !important;
             -webkit-user-select: text !important;
             cursor: auto;
@@ -161,8 +161,6 @@
             position: absolute; top: -50px; right: 0; 
             color: #666; font-size: 30px; cursor: pointer; 
             transition: 0.2s; font-weight: 100;
-            
-            /* El botón de cerrar no debería ser seleccionable como texto */
             user-select: none !important; 
         }
         .close-modal:hover { color: var(--accent-color); }
@@ -222,6 +220,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.0/openseadragon.min.js"></script>
 
     <script>
+        // --- 1. DATOS DE LOS AFICHES ---
         var posters = [
             { file: "aeon_flux.jpg", title: "Aeon Flux" },
             { file: "ciclo_celuloides.jpg", title: "Ciclo: Celuloides" },
@@ -246,6 +245,7 @@
         var currentIndex = 0;
         var viewer;
 
+        // --- 2. CONFIGURACIÓN VISUAL ---
         try {
             grained('#grained-container', {
                 "animate": true, "patternWidth": 100, "patternHeight": 100,
@@ -253,6 +253,7 @@
             });
         } catch(e) { console.log("Error grano"); }
 
+        // --- 3. INICIALIZAR VIEWER ---
         function initViewer() {
             viewer = OpenSeadragon({
                 id: "openseadragon-viewer",
@@ -268,12 +269,41 @@
                     url: posters[currentIndex].file
                 }
             });
-            document.getElementById('openseadragon-viewer').style.opacity = '1';
+
+            // Lógica de carga y precarga
+            viewer.addHandler('open', function() {
+                // Actualizar título solo cuando la imagen realmente cargó
+                document.getElementById('poster-title').innerText = posters[currentIndex].title;
+                document.getElementById('openseadragon-viewer').style.opacity = '1';
+                
+                // EJECUTAR PRECARGA INTELIGENTE
+                preloadImages(currentIndex);
+            });
+
             updateUI();
         }
 
+        // --- 4. FUNCIÓN DE PRECARGA (OPTIMIZACIÓN) ---
+        function preloadImages(index) {
+            // Cargar Siguiente (si existe)
+            if (index + 1 < posters.length) {
+                var imgNext = new Image();
+                imgNext.src = posters[index + 1].file;
+            }
+            // Cargar Anterior (si existe)
+            if (index - 1 >= 0) {
+                var imgPrev = new Image();
+                imgPrev.src = posters[index - 1].file;
+            }
+        }
+
+        // --- 5. NAVEGACIÓN ---
         function loadPoster(index) {
             if (index < 0 || index >= posters.length) return;
+            
+            // Indicador visual de carga
+            document.getElementById('poster-title').innerText = "CARGANDO...";
+            
             currentIndex = index;
             viewer.open({ type: 'image', url: posters[currentIndex].file });
             updateUI();
@@ -283,17 +313,26 @@
             var currentNum = (currentIndex + 1).toString().padStart(2, '0');
             var totalNum = posters.length.toString().padStart(2, '0');
             document.getElementById('page-counter').innerText = currentNum + " / " + totalNum;
-            document.getElementById('poster-title').innerText = posters[currentIndex].title;
+            
             document.getElementById('btn-prev').classList.toggle('disabled', currentIndex === 0);
             document.getElementById('btn-next').classList.toggle('disabled', currentIndex === posters.length - 1);
         }
 
+        // --- 6. EVENTOS ---
         document.addEventListener("DOMContentLoaded", function() { initViewer(); });
+        
         document.getElementById('btn-next').addEventListener('click', function() { loadPoster(currentIndex + 1); });
         document.getElementById('btn-prev').addEventListener('click', function() { loadPoster(currentIndex - 1); });
-        document.getElementById('btn-zoom-in').addEventListener('click', function() { viewer.viewport.zoomTo(viewer.viewport.getZoom() * 1.5); });
-        document.getElementById('btn-zoom-out').addEventListener('click', function() { viewer.viewport.zoomTo(viewer.viewport.getZoom() / 1.5); });
-        document.getElementById('btn-full').addEventListener('click', function() { viewer.setFullScreen(!viewer.isFullScreen()); });
+        
+        document.getElementById('btn-zoom-in').addEventListener('click', function() { 
+            if(viewer.viewport) viewer.viewport.zoomTo(viewer.viewport.getZoom() * 1.5); 
+        });
+        document.getElementById('btn-zoom-out').addEventListener('click', function() { 
+            if(viewer.viewport) viewer.viewport.zoomTo(viewer.viewport.getZoom() / 1.5); 
+        });
+        document.getElementById('btn-full').addEventListener('click', function() { 
+            if(viewer) viewer.setFullScreen(!viewer.isFullScreen()); 
+        });
 
         document.addEventListener('keydown', function(e) {
             if (e.key === "ArrowRight") loadPoster(currentIndex + 1);
