@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARQUICINEMA | Colección de Afiches</title>
+
+    <!-- 1. FUENTES -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- 2. ICONOS -->
+    <link href="https://cdn.jsdelivr.net/npm/dflip/css/themify-icons.min.css" rel="stylesheet" type="text/css">
+
+    <style>
+        /* --- CONFIGURACIÓN VISUAL --- */
+        :root {
+            --bg-color: #050505;      
+            --accent-color: #dc6b2f;  /* Naranja Arquicinema */
+            --text-main: #FFFFFF;     
+        }
+
+        body, html {
+            height: 100%; margin: 0;
+            background-color: var(--bg-color);
+            font-family: 'Archivo', sans-serif !important;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- FONDO DE RUIDO --- */
+        #grained-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none;
+        }
+
+        /* --- VISOR OPENSEADRAGON --- */
+        #openseadragon-viewer {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 10;
+            opacity: 0; /* Inicio oculto para fade-in */
+            transition: opacity 0.5s ease;
+        }
+
+        /* --- CONTADOR DE PAGINAS --- */
+        #page-counter {
+            position: fixed;
+            bottom: 85px; 
+            left: 50%;
+            transform: translateX(-50%);
+            color: #666;
+            font-size: 11px;
+            letter-spacing: 2px;
+            z-index: 20;
+            font-weight: 600;
+            pointer-events: none;
+        }
+
+        /* Título del Afiche actual (Opcional, discreto arriba del contador) */
+        #poster-title {
+            position: fixed;
+            bottom: 105px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--text-main);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            z-index: 20;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            opacity: 0.8;
+            pointer-events: none;
+            text-align: center;
+            width: 90%;
+        }
+
+        /* --- BARRA DE HERRAMIENTAS --- */
+        #custom-toolbar {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(5, 5, 5, 0.5); /* Fondo sutil para contraste */
+            backdrop-filter: blur(5px);
+            border-radius: 30px;
+            padding: 10px 25px;
+            gap: 25px; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        }
+
+        .custom-btn {
+            background: transparent;
+            border: none;
+            color: #AAAAAA; 
+            cursor: pointer;
+            width: auto; height: 30px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s ease;
+            padding: 0; outline: none;
+        }
+
+        .custom-btn i { font-size: 20px; line-height: 1; display: block; font-weight: normal; }
+        
+        /* Ajuste óptico icono Info */
+        #btn-info i { font-size: 17px; position: relative; top: -1px; }
+
+        .custom-btn:hover, .custom-btn.active {
+            color: var(--accent-color);
+            transform: scale(1.2);
+            text-shadow: 0 0 15px rgba(220, 107, 47, 0.6);
+        }
+
+        /* Botones deshabilitados (inicio/fin) */
+        .custom-btn.disabled {
+            color: #333;
+            pointer-events: none;
+            cursor: default;
+        }
+
+        /* Separador vertical */
+        .toolbar-separator {
+            width: 1px;
+            height: 20px;
+            background-color: #333;
+            margin: 0 5px;
+        }
+
+        /* --- MODAL INFO --- */
+        .modal-overlay {
+            display: none; 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.96); 
+            z-index: 10000; 
+            justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.show { display: flex; opacity: 1; }
+
+        .modal-content {
+            color: #fff; max-width: 500px; width: 80%;
+            text-align: center; position: relative;
+        }
+        .modal-line { width: 40px; height: 2px; background-color: var(--accent-color); margin: 20px auto; }
+        .modal-title { font-size: 24px; font-weight: 800; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 3px; }
+        .modal-subtitle { font-size: 11px; color: var(--accent-color); margin-bottom: 30px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
+        .modal-body { font-size: 14px; color: #ccc; line-height: 1.6; font-weight: 300; }
+        .modal-credits { margin-top: 25px; font-weight: 600; font-size: 15px; color: #fff; letter-spacing: 1px; }
+        .modal-note { margin-top: 30px; font-size: 10px; color: #666; border-top: 1px solid #222; padding-top: 15px; }
+        
+        .close-modal { 
+            position: absolute; top: -50px; right: 0; 
+            color: #666; font-size: 30px; cursor: pointer; 
+            transition: 0.2s; font-weight: 100;
+        }
+        .close-modal:hover { color: var(--accent-color); }
+
+    </style>
+</head>
+<body>
+
+    <!-- FONDO DE RUIDO -->
+    <div id="grained-container"></div>
+
+    <!-- MODAL DE INFORMACIÓN (Texto Actualizado) -->
+    <div id="infoModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-modal" onclick="toggleInfo()">✕</span>
+            
+            <div class="modal-title">ARQUICINEMA</div>
+            <div class="modal-subtitle">SERIE DE AFICHES</div>
+            
+            <div class="modal-line"></div>
+            
+            <div class="modal-body">
+                <p>DIRECCIÓN DE ARTE, CONCEPTUALIZACIÓN,<br>DISEÑO GRÁFICO E ILUSTRACIÓN</p>
+                
+                <div class="modal-credits">
+                    Joaquin Max Cuevas Ventura
+                </div>
+                <p style="font-size: 12px; margin-top: 5px; color: #888;">2018 - 2021</p>
+
+                <div class="modal-note">
+                    Nota: Este fue un proyecto para el club de cine ARQUICINEMA (FAADU - UMSA), para cada proyección y ciclos, libre de cualquier propósito comercial o de lucro.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI INFORMACIÓN -->
+    <div id="poster-title">Cargando...</div>
+    <div id="page-counter">00 / 00</div>
+
+    <!-- BARRA DE HERRAMIENTAS -->
+    <div id="custom-toolbar">
+        <!-- Navegación -->
+        <button class="custom-btn" id="btn-prev" title="Anterior"><i class="ti-arrow-left"></i></button>
+        
+        <div class="toolbar-separator"></div>
+
+        <!-- Zoom Deep -->
+        <button class="custom-btn" id="btn-zoom-in" title="Acercar"><i class="ti-zoom-in"></i></button>
+        <button class="custom-btn" id="btn-zoom-out" title="Alejar"><i class="ti-zoom-out"></i></button>
+        
+        <div class="toolbar-separator"></div>
+
+        <!-- Utilidades -->
+        <button class="custom-btn" id="btn-full" title="Pantalla Completa"><i class="ti-fullscreen"></i></button>
+        <button class="custom-btn" id="btn-info" title="Información"><i class="ti-info-alt"></i></button>
+        
+        <div class="toolbar-separator"></div>
+
+        <!-- Navegación -->
+        <button class="custom-btn" id="btn-next" title="Siguiente"><i class="ti-arrow-right"></i></button>
+    </div>
+
+    <!-- VISOR (Deep Zoom) -->
+    <div id="openseadragon-viewer"></div>
+
+    <!-- SCRIPTS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/grained/0.0.2/grained.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.0/openseadragon.min.js"></script>
+
+    <script>
+        // --- 1. DATOS DE LOS AFICHES ---
+        var posters = [
+            { file: "aeon_flux.jpg", title: "Aeon Flux" },
+            { file: "ciclo_celuloides.jpg", title: "Ciclo: Celuloides" },
+            { file: "ciclo_tarantino.jpg", title: "Ciclo: Quentin Tarantino" },
+            { file: "climax.jpg", title: "Climax" },
+            { file: "death_proof.jpg", title: "Death Proof" },
+            { file: "dogville.jpg", title: "Dogville" },
+            { file: "el_arbol_de_la_vida.jpg", title: "El Árbol de la Vida" },
+            { file: "irreversible.jpg", title: "Irreversible" },
+            { file: "joker.jpg", title: "Joker" },
+            { file: "la_tierra_errante.jpg", title: "La Tierra Errante" },
+            { file: "los_picantes_del_cine.jpg", title: "Ciclo: Los Picantes del Cine" },
+            { file: "lotte_am_bauhaus.jpg", title: "Lotte am Bauhaus" },
+            { file: "metropolis_1927.jpg", title: "Metropolis (1927)" },
+            { file: "metropolis_2001.jpg", title: "Metropolis (2001)" },
+            { file: "spiderman_spiderverse.jpg", title: "Spider-Man: Un Nuevo Universo" },
+            { file: "synecdoche_new_york.jpg", title: "Synecdoche, New York" },
+            { file: "the_house_that_jack_built.jpg", title: "The House That Jack Built" },
+            { file: "van_gogh.jpg", title: "Van Gogh: At Eternity's Gate" }
+        ];
+
+        var currentIndex = 0;
+        var viewer;
+
+        // --- 2. CONFIGURACIÓN VISUAL (Grano) ---
+        try {
+            grained('#grained-container', {
+                "animate": true, "patternWidth": 100, "patternHeight": 100,
+                "grainOpacity": 0.05, "grainDensity": 1, "grainWidth": 1, "grainHeight": 1
+            });
+        } catch(e) { console.log("Error grano"); }
+
+        // --- 3. INICIALIZAR OPENSEADRAGON ---
+        function initViewer() {
+            viewer = OpenSeadragon({
+                id: "openseadragon-viewer",
+                prefixUrl: "", // No necesitamos iconos internos
+                showNavigationControl: false, // Usaremos nuestra toolbar
+                wrapHorizontal: false,
+                visibilityRatio: 1.0, 
+                minZoomImageRatio: 0.8,
+                maxZoomPixelRatio: 5, // Deep Zoom fuerte
+                animationTime: 0.5,
+                tileSources: {
+                    type: 'image',
+                    url: posters[currentIndex].file
+                }
+            });
+
+            // Fade in inicial
+            document.getElementById('openseadragon-viewer').style.opacity = '1';
+            updateUI();
+        }
+
+        // --- 4. FUNCIONES DE NAVEGACIÓN ---
+        function loadPoster(index) {
+            // Validar límites
+            if (index < 0 || index >= posters.length) return;
+
+            currentIndex = index;
+            
+            // Cargar nueva imagen en el visor existente
+            viewer.open({
+                type: 'image',
+                url: posters[currentIndex].file
+            });
+
+            updateUI();
+        }
+
+        function updateUI() {
+            // Texto y Contador
+            var currentNum = (currentIndex + 1).toString().padStart(2, '0');
+            var totalNum = posters.length.toString().padStart(2, '0');
+            document.getElementById('page-counter').innerText = currentNum + " / " + totalNum;
+            document.getElementById('poster-title').innerText = posters[currentIndex].title;
+
+            // Estado Botones
+            document.getElementById('btn-prev').classList.toggle('disabled', currentIndex === 0);
+            document.getElementById('btn-next').classList.toggle('disabled', currentIndex === posters.length - 1);
+        }
+
+        // --- 5. EVENT LISTENERS ---
+        
+        // Iniciar
+        document.addEventListener("DOMContentLoaded", function() {
+            initViewer();
+        });
+
+        // Navegación (Siguiente / Anterior)
+        document.getElementById('btn-next').addEventListener('click', function() {
+            loadPoster(currentIndex + 1);
+        });
+        document.getElementById('btn-prev').addEventListener('click', function() {
+            loadPoster(currentIndex - 1);
+        });
+
+        // Zoom (Deep Zoom)
+        document.getElementById('btn-zoom-in').addEventListener('click', function() {
+            // Zoom al centro
+            var currentZoom = viewer.viewport.getZoom();
+            viewer.viewport.zoomTo(currentZoom * 1.5); 
+        });
+        document.getElementById('btn-zoom-out').addEventListener('click', function() {
+            var currentZoom = viewer.viewport.getZoom();
+            viewer.viewport.zoomTo(currentZoom / 1.5);
+        });
+
+        // Pantalla Completa
+        document.getElementById('btn-full').addEventListener('click', function() {
+            viewer.setFullScreen(!viewer.isFullScreen());
+        });
+
+        // Teclado
+        document.addEventListener('keydown', function(e) {
+            if (e.key === "ArrowRight") loadPoster(currentIndex + 1);
+            if (e.key === "ArrowLeft") loadPoster(currentIndex - 1);
+            if (e.key === "+" || e.key === "=") document.getElementById('btn-zoom-in').click();
+            if (e.key === "-") document.getElementById('btn-zoom-out').click();
+            if (e.key === "Escape") toggleInfo();
+        });
+
+        // --- 6. MODAL INFO ---
+        function toggleInfo() {
+            var modal = document.getElementById('infoModal');
+            var btn = document.getElementById('btn-info');
+            
+            if (modal.classList.contains('show')) {
+                modal.classList.remove('show');
+                setTimeout(function() { modal.style.display = 'none'; }, 300); 
+                btn.classList.remove('active');
+            } else {
+                modal.style.display = 'flex';
+                setTimeout(function() { modal.classList.add('show'); }, 10);
+                btn.classList.add('active');
+            }
+        }
+        document.getElementById('btn-info').onclick = toggleInfo;
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('infoModal')) toggleInfo();
+        }
+
+    </script>
+</body>
+</html>
